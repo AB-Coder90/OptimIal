@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, Calendar, CreditCard, Moon, Bell, Check, Loader, Settings as SettingsIcon, Globe, Shield, User } from 'lucide-react'
+import AISettings from '../components/settings/AISettings';
 
 interface Integration {
   id: string
@@ -95,6 +96,12 @@ const Settings = () => {
                 <Shield className="w-5 h-5 mr-3" />
                 Sécurité
               </a>
+              <a
+                href="#ai"
+                className="flex items-center px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Configuration IA
+              </a>
             </nav>
           </div>
         </div>
@@ -187,6 +194,14 @@ const Settings = () => {
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* Section Configuration IA */}
+          <section id="ai" className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+              Configuration IA
+            </h2>
+            <AISettings />
           </section>
 
           {/* Section Apparence */}
