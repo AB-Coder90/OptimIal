@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,9 +22,8 @@ const Calendar = ({
   showToday = true,
   locale = 'fr-FR'
 }: CalendarProps) => {
-  const [currentDate, setCurrentDate] = useState(value || new Date());
-  const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
-  const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(value?.getMonth() ?? new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(value?.getFullYear() ?? new Date().getFullYear());
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();

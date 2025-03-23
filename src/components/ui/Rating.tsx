@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +45,12 @@ const Rating = ({
     } else {
       setHoverValue(index + 1);
     }
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    setHoverValue(null);
+    setIsHovering(false);
   };
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>, index: number) => {
@@ -65,7 +70,7 @@ const Rating = ({
   };
 
   const getRatingFill = (index: number) => {
-    const currentValue = isHovering ? hoverValue : value;
+    const currentValue = isHovering ? (hoverValue ?? value) : value;
     const fill = Math.max(0, Math.min(1, currentValue - index));
     return `${fill * 100}%`;
   };
@@ -81,18 +86,18 @@ const Rating = ({
           sizes[size]
         )}
         onMouseMove={(e) => handleMouseMove(e, index)}
+        onMouseLeave={handleMouseLeave}
         onClick={(e) => handleClick(e, index)}
       >
         {/* Background star */}
         <Star
           className={cn(
-            'absolute',
-            'text-gray-300 dark:text-gray-600',
+            'absolute text-gray-200',
             sizes[size]
           )}
         />
         {/* Filled star */}
-        <div style={{ width: fill, overflow: 'hidden' }}>
+        <div style={{ width: fill, overflow: 'hidden', position: 'absolute' }}>
           <Star
             className={cn(
               'text-current',
@@ -106,35 +111,21 @@ const Rating = ({
   };
 
   return (
-    <motion.div
-      className={cn('inline-flex items-center gap-1', className)}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => {
-        setIsHovering(false);
-        setHoverValue(null);
-      }}
+    <div 
+      className={cn(
+        'inline-flex items-center gap-1',
+        className
+      )}
     >
-      <div className="flex gap-1">
-        {Array.from({ length: max }, (_, index) => (
-          <StarIcon key={index} index={index} />
-        ))}
-      </div>
-      
+      {Array.from({ length: max }, (_, i) => (
+        <StarIcon key={i} index={i} />
+      ))}
       {showValue && (
-        <span
-          className={cn(
-            'ml-2 font-medium',
-            size === 'sm' && 'text-sm',
-            size === 'lg' && 'text-lg'
-          )}
-          style={{ color }}
-        >
-          {isHovering && hoverValue !== null
-            ? hoverValue.toFixed(precision === 0.5 ? 1 : 0)
-            : value.toFixed(precision === 0.5 ? 1 : 0)}
+        <span className="ml-2 text-sm text-gray-600">
+          {isHovering ? (hoverValue ?? value) : value}
         </span>
       )}
-    </motion.div>
+    </div>
   );
 };
 
@@ -148,18 +139,9 @@ export const RatingGroup = ({
   return (
     <div className={cn('space-y-2', className)}>
       {items.map((item, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between"
-        >
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {item.label}
-          </span>
-          <Rating
-            value={item.value}
-            readonly
-            size="sm"
-          />
+        <div key={index} className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">{item.label}</span>
+          <Rating value={item.value} readonly size="sm" />
         </div>
       ))}
     </div>

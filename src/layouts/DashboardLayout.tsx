@@ -7,7 +7,8 @@ import {
   CheckSquare, 
   FileText, 
   Settings,
-  LogOut
+  LogOut,
+  Menu
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -28,63 +29,75 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <motion.aside 
-          initial={{ x: -200 }}
-          animate={{ x: 0 }}
-          className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700"
-        >
-          <div className="h-full px-3 py-4 flex flex-col justify-between">
-            <div>
-              <div className="mb-8 px-3">
-                <h1 className="text-2xl font-bold text-[#1E3A8A] dark:text-white">OptimIAL</h1>
-              </div>
-              <nav className="space-y-1">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <motion.button
-                      key={item.name}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => navigate(item.href)}
-                      className={\`flex items-center w-full px-3 py-2 rounded-lg \${
-                        isActive
-                          ? 'bg-[#1E3A8A] text-white'
-                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }\`}
-                    >
-                      <item.icon className="w-5 h-5 mr-3" />
-                      {item.name}
-                    </motion.button>
-                  );
-                })}
-              </nav>
+      {/* Header avec navigation horizontale */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <h1 className="text-2xl font-bold text-[#1E3A8A] dark:text-white">OptimIAL</h1>
             </div>
+
+            {/* Navigation principale */}
+            <nav className="hidden md:flex space-x-4">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <motion.button
+                    key={item.name}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate(item.href)}
+                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
+                      isActive
+                        ? 'bg-[#1E3A8A] text-white'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mr-2" />
+                    {item.name}
+                  </motion.button>
+                );
+              })}
+            </nav>
+
+            {/* Menu mobile */}
+            <div className="md:hidden">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+              >
+                <Menu className="w-6 h-6" />
+              </motion.button>
+            </div>
+
+            {/* Bouton de déconnexion */}
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {/* TODO: Implement logout */}}
-              className="flex items-center w-full px-3 py-2 mt-auto text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className="hidden md:flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
             >
-              <LogOut className="w-5 h-5 mr-3" />
+              <LogOut className="w-4 h-4 mr-2" />
               Déconnexion
             </motion.button>
           </div>
-        </motion.aside>
+        </div>
+      </header>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {children}
-          </motion.div>
-        </main>
-      </div>
+      {/* Contenu principal */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6"
+        >
+          {children}
+        </motion.div>
+      </main>
     </div>
   );
 };

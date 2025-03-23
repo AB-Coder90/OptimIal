@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -19,6 +19,8 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
         return 'max-w-lg';
       case 'lg':
         return 'max-w-2xl';
+      default:
+        return 'max-w-lg';
     }
   };
 
@@ -43,8 +45,8 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <div
-              className={\`w-full \${getSizeClass()} bg-white dark:bg-gray-800 rounded-lg shadow-xl\`}
-              onClick={(e) => e.stopPropagation()}
+              className={`w-full ${getSizeClass()} bg-white dark:bg-gray-800 rounded-lg shadow-xl`}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">

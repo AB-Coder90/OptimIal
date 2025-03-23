@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ interface DataGridProps<T> {
   emptyMessage?: string;
 }
 
-const DataGrid = <T extends { id?: string | number }>({
+const DataGrid = <T extends Record<string, any>>({
   columns,
   data,
   loading = false,
@@ -40,251 +40,219 @@ const DataGrid = <T extends { id?: string | number }>({
   rowClassName,
   emptyMessage = 'Aucune donnée'
 }: DataGridProps<T>) => {
-  const [sortField, setSortField] = useState<keyof T | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ field: keyof T; direction: 'asc' | 'desc' } | null>(null);
+  const [filters, setFilters] = useState<Record<keyof T, any>>({} as Record<keyof T, any>);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState<Record<string, any>>({});
 
-  const handleSort = (field: keyof T) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    const newSelection = checked ? filteredData : [];
-    setSelectedRows(newSelection);
-    onSelectionChange?.(newSelection);
-  };
-
-  const handleSelectRow = (row: T, checked: boolean) => {
-    const newSelection = checked
-      ? [...selectedRows, row]
-      : selectedRows.filter(r => r !== row);
-    setSelectedRows(newSelection);
-    onSelectionChange?.(newSelection);
-  };
-
+  // Filtrage
   const filteredData = useMemo(() => {
     return data.filter(row => {
       return Object.entries(filters).every(([field, value]) => {
         if (!value) return true;
-        const cellValue = String(row[field as keyof T]).toLowerCase();
-        return cellValue.includes(String(value).toLowerCase());
+        const fieldValue = row[field];
+        if (typeof fieldValue === 'string') {
+          return fieldValue.toLowerCase().includes(value.toLowerCase());
+        }
+        return fieldValue === value;
       });
     });
   }, [data, filters]);
 
+  // Tri
   const sortedData = useMemo(() => {
-    if (!sortField) return filteredData;
+    if (!sortConfig) return filteredData;
 
     return [...filteredData].sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
+      const aValue = a[sortConfig.field];
+      const bValue = b[sortConfig.field];
 
       if (aValue === bValue) return 0;
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
-
-      const comparison = String(aValue).localeCompare(String(bValue));
-      return sortDirection === 'asc' ? comparison : -comparison;
+      
+      const direction = sortConfig.direction === 'asc' ? 1 : -1;
+      return aValue > bValue ? direction : -direction;
     });
-  }, [filteredData, sortField, sortDirection]);
+  }, [filteredData, sortConfig]);
 
-  const paginatedData = useMemo(() => {
-    if (!pagination) return sortedData;
-    const start = (currentPage - 1) * pageSize;
-    return sortedData.slice(start, start + pageSize);
-  }, [sortedData, currentPage, pageSize, pagination]);
-
+  // Pagination
   const totalPages = Math.ceil(sortedData.length / pageSize);
+  const paginatedData = pagination
+    ? sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : sortedData;
 
-  const LoadingSkeleton = () => (
-    <div className="animate-pulse">
-      {Array.from({ length: pageSize }).map((_, index) => (
-        <div
-          key={index}
-          className="h-12 bg-gray-100 dark:bg-gray-800 rounded-lg mb-2"
-        />
-      ))}
-    </div>
-  );
+  const handleSort = (field: keyof T) => {
+    setSortConfig(current => {
+      if (current?.field === field) {
+        if (current.direction === 'asc') {
+          return { field, direction: 'desc' };
+        }
+        return null;
+      }
+      return { field, direction: 'asc' };
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    const newSelectedRows = checked ? [...paginatedData] : [];
+    setSelectedRows(newSelectedRows);
+    onSelectionChange?.(newSelectedRows);
+  };
+
+  const handleSelectRow = (row: T) => {
+    const newSelectedRows = selectedRows.includes(row)
+      ? selectedRows.filter(r => r !== row)
+      : [...selectedRows, row];
+    setSelectedRows(newSelectedRows);
+    onSelectionChange?.(newSelectedRows);
+  };
+
+  const handleRowClick = (row: T) => {
+    if (onRowClick) {
+      onRowClick(row);
+    }
+  };
 
   return (
-    <div className={cn('w-full', className)}>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800">
-              {selectable && (
-                <th className="p-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.length === filteredData.length}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                </th>
-              )}
-              {columns.map((column, index) => (
-                <th
-                  key={index}
-                  style={{ width: column.width }}
-                  className={cn(
-                    'p-4 text-left font-medium text-gray-600 dark:text-gray-300',
-                    column.sortable && 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
-                  )}
-                  onClick={() => column.sortable && handleSort(column.field)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span>{column.header}</span>
-                    {column.sortable && (
-                      <div className="flex flex-col">
-                        {sortField === column.field ? (
-                          sortDirection === 'asc' ? (
-                            <ChevronUp className="w-4 h-4" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )
+    <div className={cn('w-full overflow-x-auto', className)}>
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            {selectable && (
+              <th className="px-6 py-3 w-4">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.length === paginatedData.length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-gray-300 dark:border-gray-600"
+                />
+              </th>
+            )}
+            {columns.map((column) => (
+              <th
+                key={String(column.field)}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                style={{ width: column.width }}
+              >
+                <div className="flex items-center space-x-2">
+                  <span>{column.header}</span>
+                  {column.sortable && (
+                    <button
+                      onClick={() => handleSort(column.field)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    >
+                      {sortConfig?.field === column.field ? (
+                        sortConfig.direction === 'asc' ? (
+                          <ChevronUp className="w-4 h-4" />
                         ) : (
-                          <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {column.filterable && (
-                    <div className="mt-2">
-                      {column.renderFilter ? (
-                        column.renderFilter(
-                          filters[column.field],
-                          (value) => setFilters(prev => ({ ...prev, [column.field]: value }))
+                          <ChevronDown className="w-4 h-4" />
                         )
                       ) : (
-                        <input
-                          type="text"
-                          value={filters[column.field] || ''}
-                          onChange={(e) => setFilters(prev => ({
-                            ...prev,
-                            [column.field]: e.target.value
-                          }))}
-                          className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600"
-                          placeholder="Filtrer..."
-                        />
+                        <ArrowUpDown className="w-4 h-4" />
                       )}
-                    </div>
+                    </button>
                   )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (selectable ? 1 : 0)}
-                  className="p-4"
-                >
-                  <LoadingSkeleton />
-                </td>
-              </tr>
-            ) : paginatedData.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (selectable ? 1 : 0)}
-                  className="p-4 text-center text-gray-500 dark:text-gray-400"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map((row, rowIndex) => (
-                <motion.tr
-                  key={row.id || rowIndex}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: rowIndex * 0.05 }}
-                  className={cn(
-                    'border-b border-gray-200 dark:border-gray-700',
-                    'hover:bg-gray-50 dark:hover:bg-gray-800',
-                    onRowClick && 'cursor-pointer',
-                    rowClassName
-                  )}
-                  onClick={() => onRowClick?.(row)}
-                >
-                  {selectable && (
-                    <td className="p-4">
+                </div>
+                {column.filterable && (
+                  <div className="mt-2">
+                    {column.renderFilter ? (
+                      column.renderFilter(
+                        filters[column.field as string],
+                        (value) => setFilters(prev => ({ ...prev, [column.field]: value }))
+                      )
+                    ) : (
                       <input
-                        type="checkbox"
-                        checked={selectedRows.includes(row)}
-                        onChange={(e) => handleSelectRow(row, e.target.checked)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="rounded border-gray-300 dark:border-gray-600"
+                        type="text"
+                        value={filters[column.field as string] || ''}
+                        onChange={(e) => setFilters(prev => ({
+                          ...prev,
+                          [column.field]: e.target.value
+                        }))}
+                        className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600"
+                        placeholder={`Filtrer par ${column.header.toLowerCase()}`}
                       />
-                    </td>
-                  )}
-                  {columns.map((column, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className="p-4 text-gray-900 dark:text-white"
-                    >
-                      {column.renderCell
-                        ? column.renderCell(row)
-                        : String(row[column.field])
-                      }
-                    </td>
-                  ))}
-                </motion.tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                    )}
+                  </div>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          {loading ? (
+            <tr>
+              <td
+                colSpan={selectable ? columns.length + 1 : columns.length}
+                className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+              >
+                Chargement...
+              </td>
+            </tr>
+          ) : paginatedData.length === 0 ? (
+            <tr>
+              <td
+                colSpan={selectable ? columns.length + 1 : columns.length}
+                className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+              >
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            paginatedData.map((row, rowIndex) => (
+              <motion.tr
+                key={rowIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: rowIndex * 0.05 }}
+                onClick={() => handleRowClick(row)}
+                className={cn(
+                  'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
+                  rowClassName
+                )}
+              >
+                {selectable && (
+                  <td className="px-6 py-4 whitespace-nowrap w-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.includes(row)}
+                      onChange={() => handleSelectRow(row)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                  </td>
+                )}
+                {columns.map((column) => (
+                  <td
+                    key={String(column.field)}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+                  >
+                    {column.renderCell ? column.renderCell(row) : row[column.field]}
+                  </td>
+                ))}
+              </motion.tr>
+            ))
+          )}
+        </tbody>
+      </table>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 px-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {`${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, sortedData.length)} sur ${sortedData.length}`}
+        <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Page {currentPage} sur {totalPages}
+            </span>
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
               disabled={currentPage === 1}
-              className={cn(
-                'p-2 rounded-lg',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={cn(
-                    'px-3 py-1 rounded-lg text-sm',
-                    page === currentPage
-                      ? 'bg-[#1E3A8A] text-white'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  )}
-                >
-                  {page}
-                </button>
-              ))}
-            </div>
             <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
               disabled={currentPage === totalPages}
-              className={cn(
-                'p-2 rounded-lg',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

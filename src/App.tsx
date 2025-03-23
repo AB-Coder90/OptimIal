@@ -1,7 +1,7 @@
 import { createTheme } from '@mui/material/styles'
 import { ThemeProvider, CssBaseline } from '@mui/material'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import MainLayout from './layouts/MainLayout'
+import DashboardLayout from './layouts/DashboardLayout'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 // Pages
@@ -16,9 +16,9 @@ import Settings from './pages/Settings'
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2196F3',
-      light: '#64B5F6',
-      dark: '#1976D2',
+      main: '#1E3A8A',
+      light: '#2563EB',
+      dark: '#1E40AF',
     },
     secondary: {
       main: '#FF4081',
@@ -51,7 +51,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         },
       },
     },
@@ -60,21 +60,16 @@ const theme = createTheme({
 
 // Composant pour protéger les routes
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const auth = useAuth()
-  
-  if (!auth.user) {
-    return <Navigate to="/login" replace />
-  }
-  
-  return <>{children}</>
+  const { user } = useAuth()
+  return user ? children : <Navigate to="/login" />
 }
 
 const App = () => {
   return (
     <Router>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
           <Routes>
             {/* Route publique */}
             <Route path="/login" element={<Login />} />
@@ -85,22 +80,22 @@ const App = () => {
               path="/*"
               element={
                 <ProtectedRoute>
-                  <MainLayout>
+                  <DashboardLayout>
                     <Routes>
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/" element={<Navigate to="/dashboard" />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/tasks" element={<Tasks />} />
                       <Route path="/emails" element={<Emails />} />
                       <Route path="/invoices" element={<Invoices />} />
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
-                  </MainLayout>
+                  </DashboardLayout>
                 </ProtectedRoute>
               }
             />
           </Routes>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </Router>
   )
 }

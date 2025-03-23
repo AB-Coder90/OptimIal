@@ -1,11 +1,11 @@
-import { HTMLAttributes } from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+interface BadgeProps extends Omit<HTMLMotionProps<'span'>, 'children'> {
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info';
   size?: 'sm' | 'md' | 'lg';
   withDot?: boolean;
+  children: React.ReactNode;
 }
 
 const Badge = ({
@@ -18,26 +18,26 @@ const Badge = ({
 }: BadgeProps) => {
   const variants = {
     default: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    primary: 'bg-[#1E3A8A]/10 text-[#1E3A8A] dark:bg-[#1E3A8A]/20 dark:text-[#3B82F6]',
-    success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+    primary: 'bg-[#1E3A8A] text-white',
+    success: 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100',
+    warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100',
+    error: 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100',
+    info: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100'
   };
 
   const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-0.5 text-sm',
-    lg: 'px-3 py-1 text-base'
+    sm: 'text-xs px-2 py-0.5',
+    md: 'text-sm px-2.5 py-1',
+    lg: 'text-base px-3 py-1.5'
   };
 
   const dotColors = {
     default: 'bg-gray-500 dark:bg-gray-400',
-    primary: 'bg-[#1E3A8A] dark:bg-[#3B82F6]',
-    success: 'bg-green-500 dark:bg-green-400',
-    warning: 'bg-yellow-500 dark:bg-yellow-400',
-    error: 'bg-red-500 dark:bg-red-400',
-    info: 'bg-blue-500 dark:bg-blue-400'
+    primary: 'bg-white',
+    success: 'bg-green-500 dark:bg-green-300',
+    warning: 'bg-yellow-500 dark:bg-yellow-300',
+    error: 'bg-red-500 dark:bg-red-300',
+    info: 'bg-blue-500 dark:bg-blue-300'
   };
 
   return (

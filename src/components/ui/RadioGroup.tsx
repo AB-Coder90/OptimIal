@@ -9,101 +9,102 @@ interface RadioOption {
   disabled?: boolean;
 }
 
-interface RadioGroupProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+type Size = 'sm' | 'md' | 'lg';
+
+type RadioGroupProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> & {
   options: RadioOption[];
   value?: string;
   onChange?: (value: string) => void;
   error?: string;
   orientation?: 'horizontal' | 'vertical';
-}
+  size?: Size;
+};
+
+const sizes: Record<Size, string> = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6'
+};
+
+const labelSizes: Record<Size, string> = {
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg'
+};
 
 const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
-  ({ options, value, onChange, error, orientation = 'vertical', className, ...props }, ref) => {
+  ({ 
+    options, 
+    value, 
+    onChange, 
+    error, 
+    orientation = 'vertical', 
+    size = 'md',
+    className, 
+    ...props 
+  }, ref) => {
+    const handleChange = (optionValue: string) => {
+      if (!props.disabled) {
+        onChange?.(optionValue);
+      }
+    };
+
     return (
       <div
         ref={ref}
         className={cn(
-          orientation === 'horizontal' ? 'flex space-x-6' : 'space-y-3',
+          'w-full',
+          orientation === 'horizontal' ? 'flex flex-wrap gap-6' : 'flex flex-col gap-3',
           className
         )}
+        {...props}
       >
         {options.map((option) => (
-          <motion.div
+          <motion.label
             key={option.value}
-            whileTap={!option.disabled ? { scale: 0.98 } : undefined}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             className={cn(
-              'relative flex items-start',
-              option.disabled && 'opacity-50 cursor-not-allowed'
+              'flex items-start gap-3 cursor-pointer select-none',
+              (option.disabled || props.disabled) && 'opacity-50 cursor-not-allowed'
             )}
           >
-            <div className="flex items-center h-5">
+            <div className="relative flex items-center">
               <input
                 type="radio"
-                id={option.value}
-                value={option.value}
                 checked={value === option.value}
-                onChange={(e) => onChange?.(e.target.value)}
+                onChange={() => handleChange(option.value)}
                 disabled={option.disabled || props.disabled}
-                className="sr-only"
-                {...props}
-              />
-              <motion.div
-                initial={false}
-                animate={{
-                  borderColor: value === option.value
-                    ? '#1E3A8A'
-                    : error
-                    ? '#EF4444'
-                    : '#D1D5DB',
-                  backgroundColor: 'transparent'
-                }}
                 className={cn(
-                  'w-4 h-4 rounded-full',
-                  'border-2',
-                  'flex items-center justify-center',
+                  'form-radio border-2 border-gray-300 dark:border-gray-600',
+                  'text-[#1E3A8A] focus:ring-[#1E3A8A]',
                   'transition-colors duration-200',
-                  'dark:border-gray-600'
+                  sizes[size as Size]
                 )}
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: value === option.value ? 1 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-2 h-2 rounded-full bg-[#1E3A8A]"
-                />
-              </motion.div>
+              />
             </div>
-
-            <div className="ml-3">
-              <label
-                htmlFor={option.value}
-                className={cn(
-                  'text-sm font-medium text-gray-700 dark:text-gray-200',
-                  (option.disabled || props.disabled) && 'cursor-not-allowed'
-                )}
-              >
+            <div className="flex flex-col">
+              <span className={cn(
+                'font-medium text-gray-900 dark:text-white',
+                labelSizes[size as Size]
+              )}>
                 {option.label}
-              </label>
+              </span>
               {option.description && (
-                <p className={cn(
-                  'text-xs text-gray-500 dark:text-gray-400',
-                  (option.disabled || props.disabled) && 'opacity-50'
+                <span className={cn(
+                  'text-gray-500 dark:text-gray-400',
+                  size === 'sm' ? 'text-xs' : 'text-sm'
                 )}>
                   {option.description}
-                </p>
+                </span>
               )}
             </div>
-          </motion.div>
+          </motion.label>
         ))}
-
         {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-sm text-red-500"
-          >
+          <div className="mt-1 text-sm text-red-500 dark:text-red-400">
             {error}
-          </motion.p>
+          </div>
         )}
       </div>
     );

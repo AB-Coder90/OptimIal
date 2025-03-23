@@ -34,6 +34,8 @@ const Notification = ({
         return <XCircle className="w-5 h-5 text-red-500" />;
       case 'info':
         return <AlertCircle className="w-5 h-5 text-[#3B82F6]" />;
+      default:
+        return null;
     }
   };
 
@@ -45,6 +47,8 @@ const Notification = ({
         return 'border-red-500';
       case 'info':
         return 'border-[#3B82F6]';
+      default:
+        return 'border-gray-300';
     }
   };
 
@@ -58,7 +62,7 @@ const Notification = ({
           className="fixed top-4 right-4 z-50"
         >
           <div
-            className={\`flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 \${getBorderColor()}\`}
+            className={`flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 ${getBorderColor()}`}
           >
             <div className="flex items-center space-x-3">
               {getIcon()}
